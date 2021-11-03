@@ -3,18 +3,13 @@ pragma solidity 0.8.6;
 
 import "./interface/ILootBox.sol";
 import "./interface/ERC721.sol";
+import "./interface/ERC20_transfer.sol";
 import "./lib/Ownable.sol";
 import "./lib/AddressUtils.sol";
 import "./lib/SafeMath.sol";
 import "./lib/String.sol";
 
-interface ERC20 {
-  function balanceOf(address who) external view returns (uint256);
-  function transfer(address to, uint256 value) external returns (bool);
-  function transferFrom(address from, address to, uint256 value) external returns (bool);
-}
-
-contract Main is ERC721, Ownable {
+contract BuidlNFT is ERC721, Ownable {
   using SafeMath for uint256;
   using AddressUtils for address;
 
@@ -68,7 +63,7 @@ contract Main is ERC721, Ownable {
   // ERC20 token used in NFT transaction
   ERC20 public currency;
 
-  bool public miningTax = true;
+  bool public miningTax = false;
   bool public start = false;
 
   uint256 constant public UNIT = 1000;
@@ -338,7 +333,7 @@ contract Main is ERC721, Ownable {
     _checkBid(_bid, _sign);
     if (miningTax) {
       uint256 tax = _initPrice.mul(PLATFORM_TAX) / UNIT;
-      require(currency.transferFrom(msg.sender, address(this), tax));
+      require(currency.transferFrom(msg.sender, address(this), tax), "no mint tax");
     }
     _mint(msg.sender, _bid);
     _buidls[_bid] = Buidl(_bid, _initPrice, _initPrice, 0, msg.sender);
@@ -456,12 +451,12 @@ contract Main is ERC721, Ownable {
   }
 
   function _checkBid(uint256 _bid, bytes calldata _sign) internal view {
-    require(_sign.length == 65);
+    require(_sign.length == 65, "invalid sign");
     bytes32 h = keccak256(abi.encodePacked(msg.sender, _bid));
     uint8 v = uint8(bytes1(_sign[64:]));
     (bytes32 r, bytes32 s) = abi.decode(_sign[:64], (bytes32, bytes32));
     address signer = ecrecover(h, v, r, s);
-    require(signer == verifier);
+    require(signer == verifier, "wrong signer");
   }
 
   /**
