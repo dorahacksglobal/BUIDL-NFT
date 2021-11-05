@@ -10,7 +10,7 @@ In general, anything that can be written as programs can be implemented in the l
 
 ## Specificaiton
 
-The miner of NFT can bind a LootBox contract for his NFT by `setLootBox(uint256,address)` (or initializing while minting).
+The miner of NFT can bind a LootBox contract for his BUIDL NFT with `setLootBox(uint256,address)` (or initializing while minting).
 
 ``` solidity
 interface BuidlNFT {
@@ -24,12 +24,12 @@ interface ILootBox {
 }
 ```
 
-When an NFT is `harbergerBuy()` by anyone, if there is a bound LootBox, it will try to call the `afterHarbergerBuy()` on the LootBox. The miner of NFT can arbitrarily define the behavior of `afterHarbergerBuy()`. Generally, it will be a reward for buyers. NFT buyers can predict the occurrence of this behavior before purchase.
+When an NFT is `harbergerBuy()` by anyone, if there is a bound LootBox, it will try to call the `afterHarbergerBuy()` on the LootBox. The miner of NFT can arbitrarily define the behavior of `afterHarbergerBuy()`. Generally, it will be a buyers incentives / rewards. NFT buyers can predict the behavior of this function before purchase.
 
 To ensure safety, the LootBox should always check:
 
-- msg.sende: Prevent the interface from being abused.
-- tokenId: Prevent attacks by casting another NFT to bind the same LootBox.
+- msg.sender: Prevent the interface from being abused.
+- tokenID: Prevent other NFTs to use a same LootBox.
 
 ### Example
 
