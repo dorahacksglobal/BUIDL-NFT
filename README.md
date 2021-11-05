@@ -24,7 +24,7 @@ interface ILootBox {
 }
 ```
 
-When an NFT is `harbergerBuy()` by anyone, if there is a bound LootBox, it will try to call the `afterHarbergerBuy()` on the LootBox. The miner of NFT can arbitrarily define the behavior of `afterHarbergerBuy()`. Generally, it will be a buyers incentives / rewards. NFT buyers can predict the behavior of this function before purchase.
+When an NFT is `harbergerBuy()` by anyone, if there is an existing Loot Box, it will try to call `afterHarbergerBuy()` function from the LootBox. The miner of BUIDL NFT (a.k.a. the BUIDLer) can arbitrarily define the behavior of `afterHarbergerBuy()`. Generally, it will be a buyers incentives / rewards. NFT buyers can predict the behavior of this function before purchase.
 
 To ensure safety, the LootBox should always check:
 
@@ -78,4 +78,4 @@ BUIDL NFTs were first described as the "Uniswap Socks" of open source projects /
 
 ## Ideas
 
-For ideas of interesting use cases of loot box, we are maintaining an idea list. Everyone can contribute to the idea list and enlighten others of what loot box can do.
+For ideas of interesting use cases of loot box, we are maintaining an [lootboxideas.md](https://github.com/dorahacksglobal/lootboxideas.md). Everyone can contribute to the idea list and enlighten others of what loot box can do.

@@ -367,16 +367,16 @@ contract BuidlNFT is ERC721, Ownable {
     require(_newPrice > currentPrice);
 
     // |<------------------ newPrice ------------------>|
-    // |<-------- currentPrice -------->|<-- growing -->|<- tax ->|
+    // |<-------- currentPrice -------->|<-- premium -->|<- tax ->|
     // |<----------------------- totalSpend --------------------->|
 
     // |<---------------- growing ---------------->|
     // |<--------- 7 --------->|<--- 2 --->|<- 1 ->|
-    // |          OWNER        |   MINER   | PLATF |
+    // |          OWNER        |   MINER   | PRTCL |
   
     // |<------ tax ------>|
     // |<--- 2 --->|<- 1 ->|
-    // |   MINER   | PLATF |
+    // |   MINER   | PRTCL |
 
     uint256 growing = _newPrice - currentPrice;
     uint256 ownerIncome = growing.mul(OWNER_INCOME) / UNIT;
@@ -401,7 +401,7 @@ contract BuidlNFT is ERC721, Ownable {
 
     require(_checkAndCallSafeTransfer(owner, msg.sender, _tokenId, "BUY"));
 
-    // If NFT has a bound LootBox, it will actively notify the LootBox
+    // If NFT has an existing Loot Box, it will actively notify the LootBox
     address lootBox = _lootBox[_tokenId];
     if (lootBox != address(0)) {
       try ILootBox(lootBox).afterHarbergerBuy(_tokenId, msg.sender) {} catch {}
