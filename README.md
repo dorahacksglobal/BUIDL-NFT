@@ -78,4 +78,4 @@ BUIDL NFTs were first described as the "Uniswap Socks" of open source projects /
 
 ## Ideas
 
-For ideas of interesting use cases of loot box, we are maintaining an [lootboxideas.md](https://github.com/dorahacksglobal/lootboxideas.md). Everyone can contribute to the idea list and enlighten others of what loot box can do.
+For ideas of interesting use cases of loot box, we are maintaining an [lootboxideas.md](https://github.com/dorahacksglobal/BUIDL-NFT/lootboxideas.md). Everyone can contribute to the idea list and enlighten others of what loot box can do.

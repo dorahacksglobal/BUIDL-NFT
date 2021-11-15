@@ -23,11 +23,11 @@ contract BuidlNFT is ERC721, Ownable {
   // which can be also obtained as `ERC721Receiver(0).onERC721Received.selector`
   bytes4 constant private ERC721_RECEIVED = 0xf0b9e5ba;
 
-  // Provide verification of the relationship between miner and BUIDL
+  // Provide verification of the relationship between buidler and BUIDL
   address public verifier;
 
   // Public URL
-  string public publicURL = "https://hackerlink.io/buidl/";
+  string public publicURL;
 
   // Mapping from token ID to owner
   mapping(uint256 => address) internal _tokenOwner;
@@ -55,7 +55,7 @@ contract BuidlNFT is ERC721, Ownable {
     uint256 originalPrice;
     uint256 currentPrice;
     uint256 txs;
-    address miner;
+    address buidler;
   }
   mapping(uint256 => Buidl) internal _buidls;
   mapping(uint256 => address) internal _lootBox;
@@ -63,15 +63,15 @@ contract BuidlNFT is ERC721, Ownable {
   // ERC20 token used in NFT transaction
   ERC20 public currency;
 
-  bool public miningTax = false;
-  bool public start = false;
+  bool public miningTax;
+  bool public initialized;
 
   uint256 constant public UNIT = 1000;
-  uint256 constant public MINER_TAX = 20; // 2%
-  uint256 constant public PLATFORM_TAX = 10; // 1%
+  uint256 constant public BUIDLER_TAX = 20; // 2%
+  uint256 constant public PROTOCOL_TAX = 10; // 1%
   uint256 constant public OWNER_INCOME = 700; // 70%
-  uint256 constant public MINER_INCOME = 200; // 20%
-  // uint256 constant public PLATFORM_INCOME = 100; // 1 - OWNER_INCOME - MINER_INCOME = 10%
+  uint256 constant public BUIDLER_INCOME = 200; // 20%
+  // uint256 constant public PROTOCOL_INCOME = 100; // 1 - OWNER_INCOME - BUIDLER_INCOME = 10%
 
 /////////////////////////////////////////// ERC165 //////////////////////////////////////////////
 
@@ -101,7 +101,11 @@ contract BuidlNFT is ERC721, Ownable {
   event LootBox(uint256 indexed _tokenId, address indexed _lootBox);
   event HarbergerBuy(uint256 indexed _tokenId, address indexed _buyer, uint256 _price, uint256 _txs);
 
-  constructor(ERC20 _currency, address _verifier) {
+  function initialize(ERC20 _currency, address _verifier) public {
+    require(!initialized);
+    initialized = true;
+    admin = msg.sender;
+    publicURL = "https://hackerlink.io/buidl/";
     currency = _currency;
     verifier = _verifier;
     emit Verifier(_verifier);
@@ -139,7 +143,7 @@ contract BuidlNFT is ERC721, Ownable {
    */
   function tokenURI(uint256 _tokenId) override public view returns (string memory) {
     Buidl storage buidl = _buidls[_tokenId];
-    require(buidl.miner != address(0));
+    require(buidl.buidler != address(0));
     return (String.appendUintToString(publicURL, buidl.bid));
   }
 
@@ -201,10 +205,6 @@ contract BuidlNFT is ERC721, Ownable {
   function setPublicURL(string memory _url) external onlyOwner {
     publicURL = _url;
     emit PublicURL(_url);
-  }
-
-  function init() external onlyOwner {
-    start = true;
   }
 
   /**
@@ -332,28 +332,42 @@ contract BuidlNFT is ERC721, Ownable {
   function mint(uint256 _initPrice, uint256 _bid, bytes calldata _sign) public {
     _checkBid(_bid, _sign);
     if (miningTax) {
-      uint256 tax = _initPrice.mul(PLATFORM_TAX) / UNIT;
+      uint256 tax = _initPrice.mul(PROTOCOL_TAX) / UNIT;
       require(currency.transferFrom(msg.sender, address(this), tax), "no mint tax");
     }
     _mint(msg.sender, _bid);
     _buidls[_bid] = Buidl(_bid, _initPrice, _initPrice, 0, msg.sender);
   }
 
-  function mintFor(address _miner, uint256 _initPrice, uint256 _currentPrice, uint256 _bid, address _owner, uint256 _txs) external onlyOwner {
-    require(!start);
-    _mint(_miner, _bid);
-    _buidls[_bid] = Buidl(_bid, _initPrice, _currentPrice, _txs, _miner);
-    if (_owner != _miner) {
-      _removeTokenFrom(_miner, _bid);
-      _addTokenTo(_owner, _bid);
-      emit Transfer(_miner, _owner, _bid);
+  function mintFor(
+    address[] memory _buidler,
+    uint256[] memory _initPrice,
+    uint256[] memory _currentPrice,
+    uint256[] memory _bid,
+    address[] memory _owner,
+    uint256[] memory _txs
+  ) external {
+    require(!initialized);
+    for (uint256 i = 0; i < _buidler.length; i++) {
+      uint256 bid = _bid[i];
+      address buidler = _buidler[i];
+      address owner = _owner[i];
+
+      _buidls[bid] = Buidl(bid, _initPrice[i], _currentPrice[i], _txs[i], buidler);
+      _addTokenTo(owner, bid);
+      _allTokens.push(bid);
+
+      emit Transfer(address(0), buidler, bid);
+      if (owner != buidler) {
+        emit Transfer(buidler, owner, bid);
+      }
     }
   }
 
   function setLootBox(uint256 _tokenId, address _lootBoxAddr) public {
     require(msg.sender == ownerOf(_tokenId));
     Buidl storage buidl = _buidls[_tokenId];
-    require(msg.sender == buidl.miner);
+    require(msg.sender == buidl.buidler);
 
     _lootBox[_tokenId] = _lootBoxAddr;
     emit LootBox(_tokenId, _lootBoxAddr);
@@ -370,26 +384,26 @@ contract BuidlNFT is ERC721, Ownable {
     // |<-------- currentPrice -------->|<-- premium -->|<- tax ->|
     // |<----------------------- totalSpend --------------------->|
 
-    // |<---------------- growing ---------------->|
+    // |<---------------- premium ---------------->|
     // |<--------- 7 --------->|<--- 2 --->|<- 1 ->|
-    // |          OWNER        |   MINER   | PRTCL |
+    // |          OWNER        |  BUIDLER  | PRTCL |
   
     // |<------ tax ------>|
     // |<--- 2 --->|<- 1 ->|
-    // |   MINER   | PRTCL |
+    // |  BUIDLER  | PRTCL |
 
-    uint256 growing = _newPrice - currentPrice;
-    uint256 ownerIncome = growing.mul(OWNER_INCOME) / UNIT;
-    uint256 minerIncome = growing.mul(MINER_INCOME) / UNIT;
+    uint256 premium = _newPrice - currentPrice;
+    uint256 ownerIncome = premium.mul(OWNER_INCOME) / UNIT;
+    uint256 buidlerIncome = premium.mul(BUIDLER_INCOME) / UNIT;
   
-    uint256 minerTax = _newPrice.mul(MINER_TAX) / UNIT;
-    uint256 platformTax = _newPrice.mul(PLATFORM_TAX) / UNIT;
+    uint256 buidlerTax = _newPrice.mul(BUIDLER_TAX) / UNIT;
+    uint256 protocolTax = _newPrice.mul(PROTOCOL_TAX) / UNIT;
 
-    uint256 totalSpend = _newPrice.add(platformTax).add(minerTax);
+    uint256 totalSpend = _newPrice.add(protocolTax).add(buidlerTax);
 
     require(currency.transferFrom(msg.sender, address(this), totalSpend));
     require(currency.transfer(owner, ownerIncome.add(currentPrice)));
-    require(currency.transfer(buidl.miner, minerIncome.add(minerTax)));
+    require(currency.transfer(buidl.buidler, buidlerIncome.add(buidlerTax)));
 
     uint256 txs = buidl.txs.add(1);
     buidl.currentPrice = _newPrice;
@@ -421,7 +435,7 @@ contract BuidlNFT is ERC721, Ownable {
     uint256 originalPrice,
     uint256 currentPrice,
     uint256 txs,
-    address miner,
+    address buidler,
     string memory url,
     address lootBox
   ) {
@@ -431,7 +445,7 @@ contract BuidlNFT is ERC721, Ownable {
     originalPrice = buidl.originalPrice;
     currentPrice = buidl.currentPrice;
     txs = buidl.txs;
-    miner = buidl.miner;
+    buidler = buidl.buidler;
     url = tokenURI(_tokenId);
     lootBox = _lootBox[_tokenId];
   }
