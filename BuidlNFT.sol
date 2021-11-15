@@ -27,7 +27,7 @@ contract BuidlNFT is ERC721, Ownable {
   address public verifier;
 
   // Public URL
-  string public publicURL = "https://hackerlink.io/buidl/";
+  string public publicURL;
 
   // Mapping from token ID to owner
   mapping(uint256 => address) internal _tokenOwner;
@@ -63,8 +63,8 @@ contract BuidlNFT is ERC721, Ownable {
   // ERC20 token used in NFT transaction
   ERC20 public currency;
 
-  bool public miningTax = false;
-  bool public start = false;
+  bool public miningTax;
+  bool public initialized;
 
   uint256 constant public UNIT = 1000;
   uint256 constant public BUIDLER_TAX = 20; // 2%
@@ -101,7 +101,11 @@ contract BuidlNFT is ERC721, Ownable {
   event LootBox(uint256 indexed _tokenId, address indexed _lootBox);
   event HarbergerBuy(uint256 indexed _tokenId, address indexed _buyer, uint256 _price, uint256 _txs);
 
-  constructor(ERC20 _currency, address _verifier) {
+  function initialize(ERC20 _currency, address _verifier) public {
+    require(!initialized);
+    initialized = true;
+    admin = msg.sender;
+    publicURL = "https://hackerlink.io/buidl/";
     currency = _currency;
     verifier = _verifier;
     emit Verifier(_verifier);
@@ -201,10 +205,6 @@ contract BuidlNFT is ERC721, Ownable {
   function setPublicURL(string memory _url) external onlyOwner {
     publicURL = _url;
     emit PublicURL(_url);
-  }
-
-  function init() external onlyOwner {
-    start = true;
   }
 
   /**
@@ -339,14 +339,28 @@ contract BuidlNFT is ERC721, Ownable {
     _buidls[_bid] = Buidl(_bid, _initPrice, _initPrice, 0, msg.sender);
   }
 
-  function mintFor(address _buidler, uint256 _initPrice, uint256 _currentPrice, uint256 _bid, address _owner, uint256 _txs) external onlyOwner {
-    require(!start);
-    _mint(_buidler, _bid);
-    _buidls[_bid] = Buidl(_bid, _initPrice, _currentPrice, _txs, _buidler);
-    if (_owner != _buidler) {
-      _removeTokenFrom(_buidler, _bid);
-      _addTokenTo(_owner, _bid);
-      emit Transfer(_buidler, _owner, _bid);
+  function mintFor(
+    address[] memory _buidler,
+    uint256[] memory _initPrice,
+    uint256[] memory _currentPrice,
+    uint256[] memory _bid,
+    address[] memory _owner,
+    uint256[] memory _txs
+  ) external {
+    require(!initialized);
+    for (uint256 i = 0; i < _buidler.length; i++) {
+      uint256 bid = _bid[i];
+      address buidler = _buidler[i];
+      address owner = _owner[i];
+
+      _buidls[bid] = Buidl(bid, _initPrice[i], _currentPrice[i], _txs[i], buidler);
+      _addTokenTo(owner, bid);
+      _allTokens.push(bid);
+
+      emit Transfer(address(0), buidler, bid);
+      if (owner != buidler) {
+        emit Transfer(buidler, owner, bid);
+      }
     }
   }
 
