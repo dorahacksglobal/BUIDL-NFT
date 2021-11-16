@@ -51,7 +51,6 @@ contract BuidlNFT is ERC721, Ownable {
   mapping(uint256 => uint256) internal _ownedTokensIndex;
 
   struct Buidl {
-    uint256 bid;
     uint256 originalPrice;
     uint256 currentPrice;
     uint256 txs;
@@ -144,7 +143,7 @@ contract BuidlNFT is ERC721, Ownable {
   function tokenURI(uint256 _tokenId) override public view returns (string memory) {
     Buidl storage buidl = _buidls[_tokenId];
     require(buidl.buidler != address(0));
-    return (String.appendUintToString(publicURL, buidl.bid));
+    return (String.appendUintToString(publicURL, _tokenId));
   }
 
   /**
@@ -336,7 +335,7 @@ contract BuidlNFT is ERC721, Ownable {
       require(currency.transferFrom(msg.sender, address(this), tax), "no mint tax");
     }
     _mint(msg.sender, _bid);
-    _buidls[_bid] = Buidl(_bid, _initPrice, _initPrice, 0, msg.sender);
+    _buidls[_bid] = Buidl(_initPrice, _initPrice, 0, msg.sender);
   }
 
   function mintFor(
@@ -353,7 +352,7 @@ contract BuidlNFT is ERC721, Ownable {
       address buidler = _buidler[i];
       address owner = _owner[i];
 
-      _buidls[bid] = Buidl(bid, _initPrice[i], _currentPrice[i], _txs[i], buidler);
+      _buidls[bid] = Buidl(_initPrice[i], _currentPrice[i], _txs[i], buidler);
       _addTokenTo(owner, bid);
       _allTokens.push(bid);
 
@@ -441,7 +440,7 @@ contract BuidlNFT is ERC721, Ownable {
   ) {
     owner = ownerOf(_tokenId);
     Buidl storage buidl = _buidls[_tokenId];
-    bid = buidl.bid;
+    bid = _tokenId;
     originalPrice = buidl.originalPrice;
     currentPrice = buidl.currentPrice;
     txs = buidl.txs;
