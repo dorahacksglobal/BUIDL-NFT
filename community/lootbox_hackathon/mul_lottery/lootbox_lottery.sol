@@ -120,7 +120,7 @@ contract LotteryLootBox is ILootBox, VRFConsumerBase {
     require(_randomness > 0);
     uint256 Win_idx = _randomness % players.length;
     lastWinner = players[Win_idx];
-    require(ERC20(rewardToken).transfer(msg.sender, prizePool));
+    require(ERC20(rewardToken).transfer(lastWinner, prizePool));
     players = new address[](0);
     lotterystate = LOTTERYSTATE.CLOSED;
     random = _randomness;
