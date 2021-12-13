@@ -19,22 +19,22 @@ interface BuidlNFT {
 }
 
 contract EVOLootBox is ILootBox {
-    event EVOHarbergerBuy(address newOwner, uint256 currentPrice, uint256 txs, uint256 receive_chain_id);
+    event EVOHarbergerBuy(address newOwner, uint256 currentPrice, uint256 txs, uint256 receive_land_id);
 
     address private immutable BUIDL_NFT;
     uint256 private immutable EVO_BUIDL_ID;
-    uint256 private immutable RECEIVE_CHAIN_ID;
+    uint256 private immutable RECEIVE_LAND_ID;
 
-    constructor(address _buidl_nft, uint256 _evo_buidl_id, uint256 _receive_chain_id) {
+    constructor(address _buidl_nft, uint256 _evo_buidl_id, uint256 _receive_land_id) {
         BUIDL_NFT = _buidl_nft;
         EVO_BUIDL_ID = _evo_buidl_id;
-        RECEIVE_CHAIN_ID = _receive_chain_id;
+        RECEIVE_LAND_ID = _receive_land_id;
     }
 
     function afterHarbergerBuy(uint256 _tokenId, address _newOwner) override external {
        require(msg.sender == BUIDL_NFT, "!buildl");
        require(_tokenId == EVO_BUIDL_ID, "!evo");
        (,,,uint256 currentPrice,uint256 txs,,,) = BuidlNFT(msg.sender).metadataOf(_tokenId);
-       emit EVOHarbergerBuy(_newOwner, currentPrice, txs, RECEIVE_CHAIN_ID);
+       emit EVOHarbergerBuy(_newOwner, currentPrice, txs, RECEIVE_LAND_ID);
     }
 }
